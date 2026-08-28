@@ -12,8 +12,18 @@
     <Company>Skyline Communications</Company>
     <Description>Library for creating and managing DataMiner aka short links.</Description>
     <PackageTags>Skyline;DataMiner;aka;url-shortener</PackageTags>
+    <PackageProjectUrl>https://skyline.be</PackageProjectUrl>
+    <PackageLicenseFile>LICENSE.txt</PackageLicenseFile>
+    <PackageRequireLicenseAcceptance>True</PackageRequireLicenseAcceptance>
+    <PackageIcon>Icon.png</PackageIcon>
+    <GenerateDocumentationFile>True</GenerateDocumentationFile>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
   </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="..\Skyline.DataMiner.CICD.Tools.AKA\LICENSE.txt" Pack="true" PackagePath="" />
+    <None Include="..\Skyline.DataMiner.CICD.Tools.AKA\nuget\Icon.png" Pack="true" PackagePath="" />
+  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Azure.Data.Tables" Version="12.12.0" />
