@@ -8,8 +8,8 @@
     <Nullable>enable</Nullable>
     <AssemblyName>Skyline.DataMiner.CICD.Tools.AKA</AssemblyName>
     <RootNamespace>Skyline.DataMiner.CICD.Tools.AKA</RootNamespace>
-    <PackageVersion>0.0.1-alpha2</PackageVersion>
-    <Version>0.0.1-alpha2</Version>
+    <PackageVersion>0.0.1-alpha3</PackageVersion>
+    <Version>0.0.1-alpha3</Version>
     <PackageTags>Skyline;DataMiner</PackageTags>
     <PackageProjectUrl>https://skyline.be</PackageProjectUrl>
     <PackageReadmeFile>README.md</PackageReadmeFile>
