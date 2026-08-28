@@ -5,8 +5,8 @@
     <LangVersion>latest</LangVersion>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-    <Version>0.0.1-alpha1</Version>
-    <PackageVersion>0.0.1-alpha1</PackageVersion>
+    <Version>0.0.1-alpha2</Version>
+    <PackageVersion>0.0.1-alpha2</PackageVersion>
     <PackageId>Skyline.DataMiner.CICD.Tools.AKA.Lib</PackageId>
     <Authors>SkylineCommunications</Authors>
     <Company>Skyline Communications</Company>
