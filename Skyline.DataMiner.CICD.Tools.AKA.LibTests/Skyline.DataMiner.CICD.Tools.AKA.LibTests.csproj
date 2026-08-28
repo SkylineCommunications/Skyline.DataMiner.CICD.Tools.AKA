@@ -1,0 +1,24 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="FluentAssertions" Version="6.12.0" />
+    <PackageReference Include="MSTest" Version="4.0.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Microsoft.VisualStudio.TestTools.UnitTesting" />
+    <Using Include="Skyline.DataMiner.CICD.Tools.AKA.Lib" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Skyline.DataMiner.CICD.Tools.AKA.Lib\Skyline.DataMiner.CICD.Tools.AKA.Lib.csproj" />
+  </ItemGroup>
+
+</Project>
