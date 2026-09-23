@@ -5,8 +5,8 @@
     <LangVersion>latest</LangVersion>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-    <Version>0.0.1-alpha4</Version>
-    <PackageVersion>0.0.1-alpha4</PackageVersion>
+    <Version>0.0.1-alpha5</Version>
+    <PackageVersion>0.0.1-alpha5</PackageVersion>
     <PackageId>Skyline.DataMiner.CICD.Tools.AKA.Lib</PackageId>
     <Authors>SkylineCommunications</Authors>
     <Company>Skyline Communications</Company>
@@ -27,6 +27,7 @@
 
   <ItemGroup>
     <PackageReference Include="Azure.Data.Tables" Version="12.11.0" />
+    <PackageReference Include="Azure.Identity" Version="1.13.2" />
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="8.0.0" />
   </ItemGroup>
 

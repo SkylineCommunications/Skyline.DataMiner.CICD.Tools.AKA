@@ -27,3 +27,20 @@ dotnet tool install -g Skyline.DataMiner.CICD.Tools.AKA
 Then run the command
 aka help
 
+## Authentication
+
+The tool uses a Microsoft Entra app registration to authenticate to Azure Table Storage. Grant the app the **Storage Table Data Contributor** role for the storage account that hosts the URL shortener table.
+
+Provide the credentials through your shell or CI secret store using these standard environment variables:
+
+- `AZURE_TENANT_ID`
+- `AZURE_CLIENT_ID`
+- `AZURE_CLIENT_SECRET`
+
+Then create a short URL without exposing a storage account key or connection string:
+
+```text
+aka create --url "https://example.com/long-url"
+```
+
+The command targets `https://urldatau44etstg.table.core.windows.net/UrlsDetails`. The credentials can also be supplied with `--tenant-id`, `--client-id`, and `--client-secret`, but using an environment variable or CI secret store avoids recording the client secret in shell history.

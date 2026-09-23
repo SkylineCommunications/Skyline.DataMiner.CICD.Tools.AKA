@@ -21,12 +21,16 @@ namespace Skyline.DataMiner.CICD.Tools.AKA.LibTests
         public async Task CreateShortUrlAsync_WhenConfigured_InsertsTableEntityAndReturnsPublicUrl()
         {
             var table = new FakeUrlShortenerTable();
-            AkaLinkClient client = CreateClient("UseDevelopmentStorage=true", table);
+            var tableFactory = new FakeUrlShortenerTableFactory(table);
+            AkaLinkClient client = CreateClient(table, tableFactory: tableFactory);
 
             string? result = await client.CreateShortUrlAsync("https://example.test/long", "AKATool|123", CancellationToken.None);
 
             result.Should().NotBeNull();
             result.Should().StartWith("https://aka.dataminer.services/q");
+            tableFactory.TableServiceUri.Should().Be(new Uri(AkaLinkOptions.DefaultTableServiceUrl));
+            tableFactory.TableName.Should().Be("UrlsDetails");
+            tableFactory.Credential.Should().NotBeNull();
             table.CreateIfNotExistsCount.Should().Be(1);
             table.AddedEntities.Should().ContainSingle();
             TableEntity entity = table.AddedEntities.Single();
@@ -44,7 +48,7 @@ namespace Skyline.DataMiner.CICD.Tools.AKA.LibTests
         public async Task CreateShortUrlAsync_WhenUrlHasFragment_InsertsTableEntity()
         {
             var table = new FakeUrlShortenerTable();
-            AkaLinkClient client = CreateClient("UseDevelopmentStorage=true", table);
+            AkaLinkClient client = CreateClient(table);
             string longUrl = "https://example.test/app#action=something";
 
             string? result = await client.CreateShortUrlAsync(longUrl, "AKATool|fragment", CancellationToken.None);
@@ -75,7 +79,7 @@ namespace Skyline.DataMiner.CICD.Tools.AKA.LibTests
                     },
                 },
             };
-            AkaLinkClient client = CreateClient("UseDevelopmentStorage=true", table);
+            AkaLinkClient client = CreateClient(table);
 
             IReadOnlyList<ShortUrlInfo> result = await client.ListAsync(CancellationToken.None);
 
@@ -95,7 +99,7 @@ namespace Skyline.DataMiner.CICD.Tools.AKA.LibTests
         public async Task ArchiveAsync_MergesIsArchived()
         {
             var table = new FakeUrlShortenerTable();
-            AkaLinkClient client = CreateClient("UseDevelopmentStorage=true", table);
+            AkaLinkClient client = CreateClient(table);
             var url = new ShortUrlInfo
             {
                 PartitionKey = "q",
@@ -114,10 +118,10 @@ namespace Skyline.DataMiner.CICD.Tools.AKA.LibTests
         }
 
         [TestMethod]
-        public async Task CreateShortUrlAsync_WhenStorageConnectionStringMissing_DoesNotUseTable()
+        public async Task CreateShortUrlAsync_WhenClientSecretMissing_DoesNotUseTable()
         {
             var table = new FakeUrlShortenerTable();
-            AkaLinkClient client = CreateClient(null, table);
+            AkaLinkClient client = CreateClient(table, clientSecret: null);
 
             string? result = await client.CreateShortUrlAsync("https://example.test/long", "AKATool|123", CancellationToken.None);
 
@@ -126,11 +130,16 @@ namespace Skyline.DataMiner.CICD.Tools.AKA.LibTests
             table.AddedEntities.Should().BeEmpty();
         }
 
-        private static AkaLinkClient CreateClient(string? storageConnectionString, FakeUrlShortenerTable table)
+        private static AkaLinkClient CreateClient(
+            FakeUrlShortenerTable table,
+            string? clientSecret = "client-secret",
+            FakeUrlShortenerTableFactory? tableFactory = null)
         {
             var options = new AkaLinkOptions
             {
-                StorageConnectionString = storageConnectionString ?? String.Empty,
+                TenantId = "tenant-id",
+                ClientId = "client-id",
+                ClientSecret = clientSecret ?? String.Empty,
                 PublicBaseUrl = "https://aka.dataminer.services",
                 UrlsTableName = "UrlsDetails",
                 TitleMarker = "AKATool",
@@ -139,7 +148,7 @@ namespace Skyline.DataMiner.CICD.Tools.AKA.LibTests
             return new AkaLinkClient(
                 options,
                 NullLogger<AkaLinkClient>.Instance,
-                new FakeUrlShortenerTableFactory(table));
+                tableFactory ?? new FakeUrlShortenerTableFactory(table));
         }
     }
 }

@@ -1,5 +1,8 @@
 namespace Skyline.DataMiner.CICD.Tools.AKA.Lib
 {
+    using System;
+
+    using Azure.Core;
     using Azure.Data.Tables;
 
     /// <summary>
@@ -8,9 +11,9 @@ namespace Skyline.DataMiner.CICD.Tools.AKA.Lib
     public sealed class AzureUrlShortenerTableFactory : IUrlShortenerTableFactory
     {
         /// <inheritdoc />
-        public IUrlShortenerTable Create(string storageConnectionString, string tableName)
+        public IUrlShortenerTable Create(Uri tableServiceUri, string tableName, TokenCredential credential)
         {
-            return new AzureUrlShortenerTable(new TableClient(storageConnectionString, tableName));
+            return new AzureUrlShortenerTable(new TableClient(tableServiceUri, tableName, credential));
         }
     }
 }

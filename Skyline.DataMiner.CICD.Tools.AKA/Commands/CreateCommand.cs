@@ -15,11 +15,19 @@ namespace Skyline.DataMiner.CICD.Tools.AKA.Commands
             });
 
             AddOption(new Option<string>(
-                aliases: ["--connection-string", "-cs"],
-                description: "The Azure Storage connection string for the URL shortener table.")
-            {
-                IsRequired = true,
-            });
+                aliases: ["--tenant-id"],
+                getDefaultValue: () => Environment.GetEnvironmentVariable("AZURE_TENANT_ID") ?? String.Empty,
+                description: "The Microsoft Entra tenant ID. Defaults to AZURE_TENANT_ID."));
+
+            AddOption(new Option<string>(
+                aliases: ["--client-id"],
+                getDefaultValue: () => Environment.GetEnvironmentVariable("AZURE_CLIENT_ID") ?? String.Empty,
+                description: "The Azure app client ID. Defaults to AZURE_CLIENT_ID."));
+
+            AddOption(new Option<string>(
+                aliases: ["--client-secret"],
+                getDefaultValue: () => Environment.GetEnvironmentVariable("AZURE_CLIENT_SECRET") ?? String.Empty,
+                description: "The Azure app client secret. Defaults to AZURE_CLIENT_SECRET."));
 
             AddOption(new Option<string>(
                 aliases: ["--title", "-t"],
@@ -63,7 +71,11 @@ namespace Skyline.DataMiner.CICD.Tools.AKA.Commands
 
         public required string Url { get; set; }
 
-        public required string ConnectionString { get; set; }
+        public string TenantId { get; set; } = String.Empty;
+
+        public string ClientId { get; set; } = String.Empty;
+
+        public string ClientSecret { get; set; } = String.Empty;
 
         public string? Title { get; set; }
 
@@ -88,12 +100,22 @@ namespace Skyline.DataMiner.CICD.Tools.AKA.Commands
 
             try
             {
+                if (String.IsNullOrWhiteSpace(TenantId)
+                    || String.IsNullOrWhiteSpace(ClientId)
+                    || String.IsNullOrWhiteSpace(ClientSecret))
+                {
+                    logger.LogError("Azure app credentials are incomplete. Configure AZURE_TENANT_ID, AZURE_CLIENT_ID, and AZURE_CLIENT_SECRET or pass the corresponding command options.");
+                    return (int)ExitCodes.UnexpectedException;
+                }
+
                 string title = ResolveTitle();
                 logger.LogInformation("Creating short URL for {Url} with title '{Title}'.", Url, title);
 
                 var options = new AkaLinkOptions
                 {
-                    StorageConnectionString = ConnectionString,
+                    TenantId = TenantId,
+                    ClientId = ClientId,
+                    ClientSecret = ClientSecret,
                     PublicBaseUrl = PublicBaseUrl,
                     UrlsTableName = TableName,
                     TitleMarker = Marker,
