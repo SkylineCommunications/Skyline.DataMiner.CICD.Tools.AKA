@@ -8,7 +8,9 @@ namespace Skyline.DataMiner.CICD.Tools.AKA.Lib
     using System.Threading.Tasks;
 
     using Azure;
+    using Azure.Core;
     using Azure.Data.Tables;
+    using Azure.Identity;
 
     using Microsoft.Extensions.Logging;
 
@@ -23,6 +25,7 @@ namespace Skyline.DataMiner.CICD.Tools.AKA.Lib
         private readonly AkaLinkOptions options;
         private readonly ILogger<AkaLinkClient> logger;
         private readonly IUrlShortenerTableFactory tableFactory;
+        private readonly Lazy<TokenCredential> credential;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="AkaLinkClient"/> class.
@@ -45,6 +48,9 @@ namespace Skyline.DataMiner.CICD.Tools.AKA.Lib
             this.options = options ?? throw new ArgumentNullException(nameof(options));
             this.logger = logger ?? throw new ArgumentNullException(nameof(logger));
             this.tableFactory = tableFactory ?? throw new ArgumentNullException(nameof(tableFactory));
+            credential = new Lazy<TokenCredential>(
+                () => new ClientSecretCredential(this.options.TenantId, this.options.ClientId, this.options.ClientSecret),
+                LazyThreadSafetyMode.ExecutionAndPublication);
         }
 
         /// <inheritdoc />
@@ -61,9 +67,9 @@ namespace Skyline.DataMiner.CICD.Tools.AKA.Lib
                 return null;
             }
 
-            IUrlShortenerTable table = tableFactory.Create(configuration!.StorageConnectionString, configuration.UrlsTableName);
             try
             {
+                IUrlShortenerTable table = tableFactory.Create(configuration!.TableServiceUri, configuration.UrlsTableName, credential.Value);
                 await table.CreateIfNotExistsAsync(cancellationToken).ConfigureAwait(false);
 
                 for (int attempt = 1; attempt <= MaxCreateAttempts; attempt++)
@@ -103,9 +109,9 @@ namespace Skyline.DataMiner.CICD.Tools.AKA.Lib
                 return Array.Empty<ShortUrlInfo>();
             }
 
-            IUrlShortenerTable table = tableFactory.Create(configuration!.StorageConnectionString, configuration.UrlsTableName);
             try
             {
+                IUrlShortenerTable table = tableFactory.Create(configuration!.TableServiceUri, configuration.UrlsTableName, credential.Value);
                 await table.CreateIfNotExistsAsync(cancellationToken).ConfigureAwait(false);
                 IReadOnlyList<TableEntity> entities = await table.QueryEntitiesAsync(cancellationToken).ConfigureAwait(false);
                 return entities
@@ -140,9 +146,9 @@ namespace Skyline.DataMiner.CICD.Tools.AKA.Lib
                 return false;
             }
 
-            IUrlShortenerTable table = tableFactory.Create(configuration!.StorageConnectionString, configuration.UrlsTableName);
             try
             {
+                IUrlShortenerTable table = tableFactory.Create(configuration!.TableServiceUri, configuration.UrlsTableName, credential.Value);
                 await table.CreateIfNotExistsAsync(cancellationToken).ConfigureAwait(false);
                 var entity = new TableEntity(partitionKey, rowKey)
                 {
@@ -167,10 +173,20 @@ namespace Skyline.DataMiner.CICD.Tools.AKA.Lib
         {
             configuration = null;
 
-            string? storageConnectionString = options.StorageConnectionString;
-            if (String.IsNullOrWhiteSpace(storageConnectionString))
+            if (String.IsNullOrWhiteSpace(options.TenantId)
+                || String.IsNullOrWhiteSpace(options.ClientId)
+                || String.IsNullOrWhiteSpace(options.ClientSecret))
             {
-                logger.LogWarning("URL shortener is disabled because the storage connection string is not configured.");
+                logger.LogWarning("URL shortener is disabled because the Azure app tenant ID, client ID, or client secret is not configured.");
+                return false;
+            }
+
+            Uri? tableServiceUri = options.TableServiceUri;
+            if (tableServiceUri == null
+                || !tableServiceUri.IsAbsoluteUri
+                || !String.Equals(tableServiceUri.Scheme, Uri.UriSchemeHttps, StringComparison.OrdinalIgnoreCase))
+            {
+                logger.LogWarning("URL shortener is disabled because Table service URI {TableServiceUri} is not a valid HTTPS URI.", tableServiceUri);
                 return false;
             }
 
@@ -182,7 +198,7 @@ namespace Skyline.DataMiner.CICD.Tools.AKA.Lib
             }
 
             string tableName = String.IsNullOrWhiteSpace(options.UrlsTableName) ? "UrlsDetails" : options.UrlsTableName.Trim();
-            configuration = new UrlShortenerTableConfiguration(storageConnectionString, tableName, publicBaseUrl.TrimEnd('/'));
+            configuration = new UrlShortenerTableConfiguration(tableServiceUri, tableName, publicBaseUrl.TrimEnd('/'));
             return true;
         }
 
@@ -285,14 +301,14 @@ namespace Skyline.DataMiner.CICD.Tools.AKA.Lib
 
         private sealed class UrlShortenerTableConfiguration
         {
-            public UrlShortenerTableConfiguration(string storageConnectionString, string urlsTableName, string publicBaseUrl)
+            public UrlShortenerTableConfiguration(Uri tableServiceUri, string urlsTableName, string publicBaseUrl)
             {
-                StorageConnectionString = storageConnectionString;
+                TableServiceUri = tableServiceUri;
                 UrlsTableName = urlsTableName;
                 PublicBaseUrl = publicBaseUrl;
             }
 
-            public string StorageConnectionString { get; }
+            public Uri TableServiceUri { get; }
 
             public string UrlsTableName { get; }
 
